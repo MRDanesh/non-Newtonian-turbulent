@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "kOmegaSSTHBBase.C": "cpp",
+        "kOmegaSSTHB.C": "cpp",
+        "meltingFoamFavierModified.C": "cpp",
+        "strainRate.C": "cpp"
+    }
+}

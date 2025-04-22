@@ -33,6 +33,8 @@ License
 namespace Foam
 {
 
+
+
 // * * * * * * * * * * * Protected Member Functions  * * * * * * * * * * * * //
 
 template<class TurbulenceModel, class BasicTurbulenceModel>
@@ -377,6 +379,8 @@ kOmegaSST<TurbulenceModel, BasicTurbulenceModel>::kOmegaSST
         ),
         this->mesh_
     )
+
+
 {
     bound(k_, this->kMin_);
     bound(omega_, this->omegaMin_);
@@ -421,6 +425,11 @@ void kOmegaSST<TurbulenceModel, BasicTurbulenceModel>::correct()
         return;
     }
 
+    
+
+
+
+
     // Local references
     const alphaField& alpha = this->alpha_;
     const rhoField& rho = this->rho_;
@@ -440,7 +449,65 @@ void kOmegaSST<TurbulenceModel, BasicTurbulenceModel>::correct()
     volScalarField S2(2*magSqr(symm(tgradU())));
     volScalarField::Internal GbyNu(dev(twoSymm(tgradU()())) && tgradU()());
     volScalarField::Internal G(this->GName(), nut()*GbyNu);
+
+    // ********** Read non-Newtonian
+    IOdictionary turbulenceProperties
+    (
+        IOobject
+        (
+            "turbulenceProperties",
+            this->mesh().time().constant(),
+            this->mesh(),
+            IOobject::MUST_READ_IF_MODIFIED,
+            IOobject::NO_WRITE
+        )
+    );
+
+    dimensionedScalar K(turbulenceProperties.lookup("K"));
+    dimensionedScalar tau0(turbulenceProperties.lookup("tau0"));
+    dimensionedScalar n(turbulenceProperties.lookup("n"));
+
+    dimensionedScalar C_beta(turbulenceProperties.lookup("C_beta"));
+    dimensionedScalar C_x(turbulenceProperties.lookup("C_x"));
+    dimensionedScalar C_zeta(turbulenceProperties.lookup("C_zeta"));
+    dimensionedScalar C_E(turbulenceProperties.lookup("C_E"));
+    dimensionedScalar alpha_nn(turbulenceProperties.lookup("alpha_nn"));
+
+    // Strain rate magnitude squared
+    volScalarField gammaDot = sqrt(S2 + SMALL);  // Effective shear rate
+
+    // Apparent viscosity from real HB (no regularization)
+    volScalarField muApp = tau0/gammaDot + K * pow(gammaDot, n - 1);
+
+    // d(mu)/d(gammaDot)
+    volScalarField dmu_dgamma =
+        -tau0 / (gammaDot * gammaDot + VSMALL) + K * (n - 1.0) * pow(gammaDot, n - 2.0);
+
+    // Compute mu^nn
+    volScalarField muNN = dmu_dgamma * (rho * C_beta* betaStar_ * k_ * omega_ / (muApp * gammaDot + VSMALL));
+
+    // Optional: Bound it for stability
+    muNN = max(muNN, dimensionedScalar("zero", muNN.dimensions(), 0.0));
+
+    // 1. chi^nn
+    volScalarField chiNN = -C_x*muNN * S2;
+
+    // 2. zeta^nn
+    volScalarField zetaCoeff = dmu_dgamma * S2 / (gammaDot + VSMALL);
+    volScalarField zetaNN = C_zeta * fvc::div(zetaCoeff * fvc::grad(k_));
+
+    volScalarField muEff_nn = this->muEff();
+
+
     tgradU.clear();
+
+    
+
+    
+
+    //const volSymmTensorField S(symm(fvc::grad(U)));
+    //volScalarField gammaDot("gammaDot", sqrt(2)*mag(S));
+
 
     // Update omega and G at the wall
     omega_.boundaryFieldRef().updateCoeffs();
@@ -453,9 +520,15 @@ void kOmegaSST<TurbulenceModel, BasicTurbulenceModel>::correct()
     volScalarField F1(this->F1(CDkOmega));
     volScalarField F23(this->F23());
 
+  
+    // 3. E^nn
+    //volScalarField E_nn = C_E*(rho * gamma_nn / (muEff_nn + VSMALL)) * (chiNN + zetaNN);
+
+
     {
         volScalarField::Internal gamma(this->gamma(F1));
         volScalarField::Internal beta(this->beta(F1));
+        
 
         // Turbulent frequency equation
         tmp<fvScalarMatrix> omegaEqn
@@ -481,6 +554,8 @@ void kOmegaSST<TurbulenceModel, BasicTurbulenceModel>::correct()
           + Qsas(S2(), gamma, beta)
           + omegaSource()
           + fvOptions(alpha, rho, omega_)
+          - fvm::SuSp(C_E * (alpha()*rho() * gamma / muEff_nn)* chiNN   * omega_(), omega_)
+          - fvm::SuSp(C_E * (alpha()*rho() * gamma / muEff_nn)* zetaNN   * omega_(), omega_)
         );
 
         omegaEqn.ref().relax();
@@ -503,6 +578,8 @@ void kOmegaSST<TurbulenceModel, BasicTurbulenceModel>::correct()
       - fvm::Sp(alpha()*rho()*epsilonByk(F1, F23), k_)
       + kSource()
       + fvOptions(alpha, rho, k_)
+      + alpha * chiNN
+      + alpha * zetaNN
     );
 
     kEqn.ref().relax();
