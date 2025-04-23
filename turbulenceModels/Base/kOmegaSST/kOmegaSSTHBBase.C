@@ -39,7 +39,7 @@ namespace Foam
 
 template<class TurbulenceModel, class BasicTurbulenceModel>
 tmp<volScalarField>
-kOmegaSST<TurbulenceModel, BasicTurbulenceModel>::kOmegaSST::F1
+kOmegaSSTHBBase<TurbulenceModel, BasicTurbulenceModel>::kOmegaSSTHBBase::F1
 (
     const volScalarField& CDkOmega
 ) const
@@ -69,7 +69,7 @@ kOmegaSST<TurbulenceModel, BasicTurbulenceModel>::kOmegaSST::F1
 
 template<class TurbulenceModel, class BasicTurbulenceModel>
 tmp<volScalarField>
-kOmegaSST<TurbulenceModel, BasicTurbulenceModel>::kOmegaSST::F2() const
+kOmegaSSTHBBase<TurbulenceModel, BasicTurbulenceModel>::kOmegaSSTHBBase::F2() const
 {
     tmp<volScalarField> arg2 = min
     (
@@ -86,7 +86,7 @@ kOmegaSST<TurbulenceModel, BasicTurbulenceModel>::kOmegaSST::F2() const
 
 template<class TurbulenceModel, class BasicTurbulenceModel>
 tmp<volScalarField>
-kOmegaSST<TurbulenceModel, BasicTurbulenceModel>::kOmegaSST::F3() const
+kOmegaSSTHBBase<TurbulenceModel, BasicTurbulenceModel>::kOmegaSSTHBBase::F3() const
 {
     tmp<volScalarField> arg3 = min
     (
@@ -99,7 +99,7 @@ kOmegaSST<TurbulenceModel, BasicTurbulenceModel>::kOmegaSST::F3() const
 
 template<class TurbulenceModel, class BasicTurbulenceModel>
 tmp<volScalarField>
-kOmegaSST<TurbulenceModel, BasicTurbulenceModel>::kOmegaSST::F23() const
+kOmegaSSTHBBase<TurbulenceModel, BasicTurbulenceModel>::kOmegaSSTHBBase::F23() const
 {
     tmp<volScalarField> f23(F2());
 
@@ -113,7 +113,7 @@ kOmegaSST<TurbulenceModel, BasicTurbulenceModel>::kOmegaSST::F23() const
 
 
 template<class TurbulenceModel, class BasicTurbulenceModel>
-void kOmegaSST<TurbulenceModel, BasicTurbulenceModel>::correctNut
+void kOmegaSSTHBBase<TurbulenceModel, BasicTurbulenceModel>::correctNut
 (
     const volScalarField& S2,
     const volScalarField& F2
@@ -130,7 +130,7 @@ void kOmegaSST<TurbulenceModel, BasicTurbulenceModel>::correctNut
 // * * * * * * * * * * * * Protected Member Functions  * * * * * * * * * * * //
 
 template<class TurbulenceModel, class BasicTurbulenceModel>
-void kOmegaSST<TurbulenceModel, BasicTurbulenceModel>::correctNut()
+void kOmegaSSTHBBase<TurbulenceModel, BasicTurbulenceModel>::correctNut()
 {
     correctNut(2*magSqr(symm(fvc::grad(this->U_))), F23());
 }
@@ -138,7 +138,7 @@ void kOmegaSST<TurbulenceModel, BasicTurbulenceModel>::correctNut()
 
 template<class TurbulenceModel, class BasicTurbulenceModel>
 tmp<volScalarField::Internal>
-kOmegaSST<TurbulenceModel, BasicTurbulenceModel>::Pk
+kOmegaSSTHBBase<TurbulenceModel, BasicTurbulenceModel>::Pk
 (
     const volScalarField::Internal& G
 ) const
@@ -149,7 +149,7 @@ kOmegaSST<TurbulenceModel, BasicTurbulenceModel>::Pk
 
 template<class TurbulenceModel, class BasicTurbulenceModel>
 tmp<volScalarField::Internal>
-kOmegaSST<TurbulenceModel, BasicTurbulenceModel>::epsilonByk
+kOmegaSSTHBBase<TurbulenceModel, BasicTurbulenceModel>::epsilonByk
 (
     const volScalarField::Internal& F1,
     const volScalarField::Internal& F2
@@ -161,7 +161,7 @@ kOmegaSST<TurbulenceModel, BasicTurbulenceModel>::epsilonByk
 
 template<class TurbulenceModel, class BasicTurbulenceModel>
 tmp<fvScalarMatrix>
-kOmegaSST<TurbulenceModel, BasicTurbulenceModel>::kSource() const
+kOmegaSSTHBBase<TurbulenceModel, BasicTurbulenceModel>::kSource() const
 {
     return tmp<fvScalarMatrix>
     (
@@ -176,7 +176,7 @@ kOmegaSST<TurbulenceModel, BasicTurbulenceModel>::kSource() const
 
 template<class TurbulenceModel, class BasicTurbulenceModel>
 tmp<fvScalarMatrix>
-kOmegaSST<TurbulenceModel, BasicTurbulenceModel>::omegaSource() const
+kOmegaSSTHBBase<TurbulenceModel, BasicTurbulenceModel>::omegaSource() const
 {
     return tmp<fvScalarMatrix>
     (
@@ -190,7 +190,7 @@ kOmegaSST<TurbulenceModel, BasicTurbulenceModel>::omegaSource() const
 
 
 template<class TurbulenceModel, class BasicTurbulenceModel>
-tmp<fvScalarMatrix> kOmegaSST<TurbulenceModel, BasicTurbulenceModel>::Qsas
+tmp<fvScalarMatrix> kOmegaSSTHBBase<TurbulenceModel, BasicTurbulenceModel>::Qsas
 (
     const volScalarField::Internal& S2,
     const volScalarField::Internal& gamma,
@@ -211,7 +211,7 @@ tmp<fvScalarMatrix> kOmegaSST<TurbulenceModel, BasicTurbulenceModel>::Qsas
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
 template<class TurbulenceModel, class BasicTurbulenceModel>
-kOmegaSST<TurbulenceModel, BasicTurbulenceModel>::kOmegaSST
+kOmegaSSTHBBase<TurbulenceModel, BasicTurbulenceModel>::kOmegaSSTHBBase
 (
     const word& type,
     const alphaField& alpha,
@@ -390,7 +390,7 @@ kOmegaSST<TurbulenceModel, BasicTurbulenceModel>::kOmegaSST
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
 template<class TurbulenceModel, class BasicTurbulenceModel>
-bool kOmegaSST<TurbulenceModel, BasicTurbulenceModel>::read()
+bool kOmegaSSTHBBase<TurbulenceModel, BasicTurbulenceModel>::read()
 {
     if (TurbulenceModel::read())
     {
@@ -418,7 +418,7 @@ bool kOmegaSST<TurbulenceModel, BasicTurbulenceModel>::read()
 
 
 template<class TurbulenceModel, class BasicTurbulenceModel>
-void kOmegaSST<TurbulenceModel, BasicTurbulenceModel>::correct()
+void kOmegaSSTHBBase<TurbulenceModel, BasicTurbulenceModel>::correct()
 {
     if (!this->turbulence_)
     {
@@ -471,31 +471,34 @@ void kOmegaSST<TurbulenceModel, BasicTurbulenceModel>::correct()
     dimensionedScalar C_x(turbulenceProperties.lookup("C_x"));
     dimensionedScalar C_zeta(turbulenceProperties.lookup("C_zeta"));
     dimensionedScalar C_E(turbulenceProperties.lookup("C_E"));
-    dimensionedScalar alpha_nn(turbulenceProperties.lookup("alpha_nn"));
+
+    Info<< "READ BY HERE1!!!!!\n" << endl;
 
     // Strain rate magnitude squared
-    volScalarField gammaDot = sqrt(S2 + SMALL);  // Effective shear rate
-
+    volScalarField gammaDot = sqrt(S2);  // Effective shear rate
+    Info<< "READ BY HERE2!!!!!\n" << endl;
     // Apparent viscosity from real HB (no regularization)
     volScalarField muApp = tau0/gammaDot + K * pow(gammaDot, n - 1);
-
+    Info<< "READ BY HERE3!!!!!\n" << endl;
     // d(mu)/d(gammaDot)
     volScalarField dmu_dgamma =
-        -tau0 / (gammaDot * gammaDot + VSMALL) + K * (n - 1.0) * pow(gammaDot, n - 2.0);
-
+        -tau0 / (gammaDot * gammaDot ) + K * (n - 1.0) * pow(gammaDot, n - 2.0);
+    Info<< "READ BY HERE4!!!!!\n" << endl;
     // Compute mu^nn
-    volScalarField muNN = dmu_dgamma * (rho * C_beta* betaStar_ * k_ * omega_ / (muApp * gammaDot + VSMALL));
-
+    volScalarField muNN = dmu_dgamma * (rho * C_beta* betaStar_ * k_ * omega_ / (muApp * gammaDot));
+    Info<< "READ BY HERE5!!!!!\n" << endl;
     // Optional: Bound it for stability
     muNN = max(muNN, dimensionedScalar("zero", muNN.dimensions(), 0.0));
-
+    Info<< "READ BY HERE6!!!!!\n" << endl;
     // 1. chi^nn
     volScalarField chiNN = -C_x*muNN * S2;
-
+    Info<< "READ BY HERE7!!!!!\n" << endl;
     // 2. zeta^nn
-    volScalarField zetaCoeff = dmu_dgamma * S2 / (gammaDot + VSMALL);
-    volScalarField zetaNN = C_zeta * fvc::div(zetaCoeff * fvc::grad(k_));
-
+    volScalarField zetaCoeff = dmu_dgamma * S2 / (gammaDot );
+    Info<< "READ BY HERE8!!!!!\n" << endl;
+   
+    volScalarField zetaNN = C_zeta * fvc::laplacian(zetaCoeff, k_);
+    Info<< "READ BY HERE9!!!!!\n" << endl;
     volScalarField muEff_nn = this->muEff();
 
 
@@ -554,8 +557,8 @@ void kOmegaSST<TurbulenceModel, BasicTurbulenceModel>::correct()
           + Qsas(S2(), gamma, beta)
           + omegaSource()
           + fvOptions(alpha, rho, omega_)
-          - fvm::SuSp(C_E * (alpha()*rho() * gamma / muEff_nn)* chiNN   * omega_(), omega_)
-          - fvm::SuSp(C_E * (alpha()*rho() * gamma / muEff_nn)* zetaNN   * omega_(), omega_)
+          //- fvm::SuSp(C_E * (alpha()*rho() * gamma / muEff_nn)* chiNN   * omega_(), omega_)
+          //- fvm::SuSp(C_E * (alpha()*rho() * gamma / muEff_nn)* zetaNN   * omega_(), omega_)
         );
 
         omegaEqn.ref().relax();
@@ -578,8 +581,8 @@ void kOmegaSST<TurbulenceModel, BasicTurbulenceModel>::correct()
       - fvm::Sp(alpha()*rho()*epsilonByk(F1, F23), k_)
       + kSource()
       + fvOptions(alpha, rho, k_)
-      + alpha * chiNN
-      + alpha * zetaNN
+      //+ alpha * chiNN
+      //+ alpha * zetaNN
     );
 
     kEqn.ref().relax();

@@ -22,7 +22,7 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Class
-    Foam::kOmegaSST
+    Foam::kOmegaSSTHBBase
 
 Description
     Implementation of the k-omega-SST turbulence model for
@@ -93,7 +93,7 @@ Description
     \endverbatim
 
 SourceFiles
-    kOmegaSST.C
+    kOmegaSSTHBBase.C
 
 \*---------------------------------------------------------------------------*/
 
@@ -106,11 +106,11 @@ namespace Foam
 {
 
 /*---------------------------------------------------------------------------*\
-                           Class kOmegaSST Declaration
+                           Class kOmegaSSTHBBase Declaration
 \*---------------------------------------------------------------------------*/
 
 template<class TurbulenceModel, class BasicTurbulenceModel>
-class kOmegaSST
+class kOmegaSSTHBBase
 :
     public TurbulenceModel
 {
@@ -248,7 +248,7 @@ public:
     // Constructors
 
         //- Construct from components
-        kOmegaSST
+        kOmegaSSTHBBase
         (
             const word& type,
             const alphaField& alpha,
@@ -261,11 +261,11 @@ public:
         );
 
         //- Disallow default bitwise copy construction
-        kOmegaSST(const kOmegaSST&) = delete;
+        kOmegaSSTHBBase(const kOmegaSSTHBBase&) = delete;
 
 
     //- Destructor
-    virtual ~kOmegaSST()
+    virtual ~kOmegaSSTHBBase()
     {}
 
 
@@ -324,7 +324,7 @@ public:
     // Member Operators
 
         //- Disallow default bitwise assignment
-        void operator=(const kOmegaSST&) = delete;
+        void operator=(const kOmegaSSTHBBase&) = delete;
 };
 
 

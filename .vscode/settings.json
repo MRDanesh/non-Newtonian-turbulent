@@ -3,6 +3,7 @@
         "kOmegaSSTHBBase.C": "cpp",
         "kOmegaSSTHB.C": "cpp",
         "meltingFoamFavierModified.C": "cpp",
-        "strainRate.C": "cpp"
+        "strainRate.C": "cpp",
+        "myTurbulentTransportModels.C": "cpp"
     }
 }

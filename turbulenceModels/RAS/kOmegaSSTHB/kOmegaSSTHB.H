@@ -57,7 +57,7 @@ namespace RASModels
 template<class BasicTurbulenceModel>
 class kOmegaSSTHB
 : 
-    public Foam::kOmegaSST  // MUST NOT BE CHANGED
+    public Foam::kOmegaSSTHBBase  // MUST NOT BE CHANGED
     <
         eddyViscosity<RASModel<BasicTurbulenceModel>>,
         BasicTurbulenceModel

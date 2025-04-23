@@ -47,7 +47,7 @@ kOmegaSSTHB<BasicTurbulenceModel>::kOmegaSSTHB
     const word& type
 )
 :
-    Foam::kOmegaSST  // MUST NOT BE CHANGED
+    Foam::kOmegaSSTHBBase  // MUST NOT BE CHANGED
     <
         eddyViscosity<RASModel<BasicTurbulenceModel>>,
         BasicTurbulenceModel
