@@ -450,7 +450,7 @@ void kOmegaSSTHBBase<TurbulenceModel, BasicTurbulenceModel>::correct()
     volScalarField::Internal GbyNu(dev(twoSymm(tgradU()())) && tgradU()());
     volScalarField::Internal G(this->GName(), nut()*GbyNu);
 
-    // ********** Read non-Newtonian
+    // ********** Read non-Newtonian *************//
     IOdictionary turbulenceProperties
     (
         IOobject
@@ -463,9 +463,16 @@ void kOmegaSSTHBBase<TurbulenceModel, BasicTurbulenceModel>::correct()
         )
     );
 
+    //********************* NOTE **********************//
+
+    // rho is dimensionless, becasue OpenFOAM just take kinematic viscosity. So in the code mu is actually nu
+
+    //********************* NOTE **********************//
+
     dimensionedScalar K(turbulenceProperties.lookup("K"));
     dimensionedScalar tau0(turbulenceProperties.lookup("tau0"));
     dimensionedScalar n(turbulenceProperties.lookup("n"));
+    dimensionedScalar density(turbulenceProperties.lookup("n"));
 
     dimensionedScalar C_beta(turbulenceProperties.lookup("C_beta"));
     dimensionedScalar C_x(turbulenceProperties.lookup("C_x"));
@@ -485,7 +492,7 @@ void kOmegaSSTHBBase<TurbulenceModel, BasicTurbulenceModel>::correct()
         -tau0 / (gammaDot * gammaDot ) + K * (n - 1.0) * pow(gammaDot, n - 2.0);
     Info<< "READ BY HERE4!!!!!\n" << endl;
     // Compute mu^nn
-    volScalarField muNN = dmu_dgamma * (rho * C_beta* betaStar_ * k_ * omega_ / (muApp * gammaDot));
+    volScalarField muNN = dmu_dgamma * (C_beta* betaStar_ * k_ * omega_ / (muApp * gammaDot));  // Check omega_ and k_ later
     Info<< "READ BY HERE5!!!!!\n" << endl;
     // Optional: Bound it for stability
     muNN = max(muNN, dimensionedScalar("zero", muNN.dimensions(), 0.0));
@@ -493,19 +500,24 @@ void kOmegaSSTHBBase<TurbulenceModel, BasicTurbulenceModel>::correct()
     // 1. chi^nn
     volScalarField chiNN = -C_x*muNN * S2;
     Info<< "READ BY HERE7!!!!!\n" << endl;
+
+
+    Info << "gammaDot dimensions: " << gammaDot.dimensions() << endl;
+    Info << "muApp dimensions: " << muApp.dimensions() << endl;
+    Info << "dmu_dgamma dimensions: " << dmu_dgamma.dimensions() << endl;
+    Info << "muNN dimensions: " << muNN.dimensions() << endl;
+    Info << "chiNN dimensions: " << chiNN.dimensions() << endl;
     // 2. zeta^nn
-    volScalarField zetaCoeff = dmu_dgamma * S2 / (gammaDot );
+    volScalarField zetaCoeff = dmu_dgamma * S2 / gammaDot;
     Info<< "READ BY HERE8!!!!!\n" << endl;
    
     volScalarField zetaNN = C_zeta * fvc::laplacian(zetaCoeff, k_);
     Info<< "READ BY HERE9!!!!!\n" << endl;
     volScalarField muEff_nn = this->muEff();
 
-
     tgradU.clear();
 
     
-
     
 
     //const volSymmTensorField S(symm(fvc::grad(U)));
@@ -557,8 +569,8 @@ void kOmegaSSTHBBase<TurbulenceModel, BasicTurbulenceModel>::correct()
           + Qsas(S2(), gamma, beta)
           + omegaSource()
           + fvOptions(alpha, rho, omega_)
-          //- fvm::SuSp(C_E * (alpha()*rho() * gamma / muEff_nn)* chiNN   * omega_(), omega_)
-          //- fvm::SuSp(C_E * (alpha()*rho() * gamma / muEff_nn)* zetaNN   * omega_(), omega_)
+          - (C_E*gamma/muEff_nn)*chiNN
+          - (C_E*gamma/muEff_nn)*zetaNN
         );
 
         omegaEqn.ref().relax();
@@ -581,8 +593,8 @@ void kOmegaSSTHBBase<TurbulenceModel, BasicTurbulenceModel>::correct()
       - fvm::Sp(alpha()*rho()*epsilonByk(F1, F23), k_)
       + kSource()
       + fvOptions(alpha, rho, k_)
-      //+ alpha * chiNN
-      //+ alpha * zetaNN
+      + alpha() * chiNN
+      + alpha() * zetaNN
     );
 
     kEqn.ref().relax();
