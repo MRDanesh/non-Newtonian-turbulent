@@ -28,8 +28,9 @@
     
 
    // Replace stress term
-   volScalarField nuEffCustom = turbulence->nuEff() + C_tau * muNN;
-
+   volScalarField nuEffCustom = C_tau * muNN;
+   //volVectorField nonNewtonianViscousTerm = 2*fvm::laplacian(nu_nn, U);
+    //
 
     MRF.correctBoundaryVelocity(U);
 
@@ -38,8 +39,8 @@
         fvm::div(phi, U)
       + MRF.DDt(U)
       + g
-      //+ turbulence->divDevReff(U)
-      - 2*fvm::laplacian(nuEffCustom, U)
+      + turbulence->divDevReff(U)
+      + 2*fvm::laplacian(nuEffCustom, U)
      ==
         fvOptions(U)
     );
