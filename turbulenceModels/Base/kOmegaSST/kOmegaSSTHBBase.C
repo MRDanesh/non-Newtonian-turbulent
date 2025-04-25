@@ -449,7 +449,7 @@ void kOmegaSSTHBBase<TurbulenceModel, BasicTurbulenceModel>::correct()
     volScalarField S2(2*magSqr(symm(tgradU())));
     volScalarField::Internal GbyNu(dev(twoSymm(tgradU()())) && tgradU()());
     volScalarField::Internal G(this->GName(), nut()*GbyNu);
-
+    tgradU.clear();
     // ********** Read non-Newtonian *************//
     IOdictionary turbulenceProperties
     (
@@ -472,57 +472,43 @@ void kOmegaSSTHBBase<TurbulenceModel, BasicTurbulenceModel>::correct()
     dimensionedScalar K(turbulenceProperties.lookup("K"));
     dimensionedScalar tau0(turbulenceProperties.lookup("tau0"));
     dimensionedScalar n(turbulenceProperties.lookup("n"));
-    dimensionedScalar density(turbulenceProperties.lookup("n"));
 
     dimensionedScalar C_beta(turbulenceProperties.lookup("C_beta"));
     dimensionedScalar C_x(turbulenceProperties.lookup("C_x"));
     dimensionedScalar C_zeta(turbulenceProperties.lookup("C_zeta"));
-    dimensionedScalar C_E(turbulenceProperties.lookup("C_E"));
-
-    Info<< "READ BY HERE1!!!!!\n" << endl;
+    dimensionedScalar C_E1(turbulenceProperties.lookup("C_E1"));
+    dimensionedScalar C_E2(turbulenceProperties.lookup("C_E2"));
 
     // Strain rate magnitude squared
     volScalarField gammaDot = sqrt(S2);  // Effective shear rate
-    Info<< "READ BY HERE2!!!!!\n" << endl;
+    dimensionedScalar SMALL_gamma("SMALL_gamma", gammaDot.dimensions(), VSMALL);
+    gammaDot = sqrt(S2)+SMALL_gamma;  // Effective shear rate
     // Apparent viscosity from real HB (no regularization)
     volScalarField muApp = tau0/gammaDot + K * pow(gammaDot, n - 1);
-    Info<< "READ BY HERE3!!!!!\n" << endl;
     // d(mu)/d(gammaDot)
-    volScalarField dmu_dgamma =
-        -tau0 / (gammaDot * gammaDot ) + K * (n - 1.0) * pow(gammaDot, n - 2.0);
-    Info<< "READ BY HERE4!!!!!\n" << endl;
+    dimensionedScalar SMALL_value("SMALL_gamma", S2.dimensions(), pow(10,-30));
+    volScalarField dmu_dgamma = -tau0 / (gammaDot * gammaDot + SMALL_value) + K * (n - 1.0) * pow(gammaDot, n - 2.0);
     // Compute mu^nn
     volScalarField muNN = dmu_dgamma * (C_beta* betaStar_ * k_ * omega_ / (muApp * gammaDot));  // Check omega_ and k_ later
-    Info<< "READ BY HERE5!!!!!\n" << endl;
     // Optional: Bound it for stability
     muNN = max(muNN, dimensionedScalar("zero", muNN.dimensions(), 0.0));
-    Info<< "READ BY HERE6!!!!!\n" << endl;
     // 1. chi^nn
     volScalarField chiNN = -C_x*muNN * S2;
-    Info<< "READ BY HERE7!!!!!\n" << endl;
 
 
-    Info << "gammaDot dimensions: " << gammaDot.dimensions() << endl;
-    Info << "muApp dimensions: " << muApp.dimensions() << endl;
-    Info << "dmu_dgamma dimensions: " << dmu_dgamma.dimensions() << endl;
-    Info << "muNN dimensions: " << muNN.dimensions() << endl;
-    Info << "chiNN dimensions: " << chiNN.dimensions() << endl;
-    // 2. zeta^nn
+
+   
+   
     volScalarField zetaCoeff = dmu_dgamma * S2 / gammaDot;
-    Info<< "READ BY HERE8!!!!!\n" << endl;
    
     volScalarField zetaNN = C_zeta * fvc::laplacian(zetaCoeff, k_);
-    Info<< "READ BY HERE9!!!!!\n" << endl;
-    volScalarField muEff_nn = this->muEff();
 
-    tgradU.clear();
+    volScalarField nut_nn = this->nut();
 
     
-    
 
-    //const volSymmTensorField S(symm(fvc::grad(U)));
-    //volScalarField gammaDot("gammaDot", sqrt(2)*mag(S));
-
+    scalar FE_n = 0.5 * tanh(8.0 * (n.value() - 0.75)) + 0.5;
+    scalar C_E = C_E1.value() * FE_n + C_E2.value() * (1.0 - FE_n);
 
     // Update omega and G at the wall
     omega_.boundaryFieldRef().updateCoeffs();
@@ -535,9 +521,6 @@ void kOmegaSSTHBBase<TurbulenceModel, BasicTurbulenceModel>::correct()
     volScalarField F1(this->F1(CDkOmega));
     volScalarField F23(this->F23());
 
-  
-    // 3. E^nn
-    //volScalarField E_nn = C_E*(rho * gamma_nn / (muEff_nn + VSMALL)) * (chiNN + zetaNN);
 
 
     {
@@ -569,8 +552,8 @@ void kOmegaSSTHBBase<TurbulenceModel, BasicTurbulenceModel>::correct()
           + Qsas(S2(), gamma, beta)
           + omegaSource()
           + fvOptions(alpha, rho, omega_)
-          - (C_E*gamma/muEff_nn)*chiNN
-          - (C_E*gamma/muEff_nn)*zetaNN
+          - (C_E*gamma/nut_nn)*chiNN
+          - (C_E*gamma/nut_nn)*zetaNN
         );
 
         omegaEqn.ref().relax();
