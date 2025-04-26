@@ -469,6 +469,8 @@ void kOmegaSSTHBBase<TurbulenceModel, BasicTurbulenceModel>::correct()
 
     //********************* NOTE **********************//
 
+    
+
     dimensionedScalar K(turbulenceProperties.lookup("K"));
     dimensionedScalar tau0(turbulenceProperties.lookup("tau0"));
     dimensionedScalar n(turbulenceProperties.lookup("n"));
@@ -484,10 +486,11 @@ void kOmegaSSTHBBase<TurbulenceModel, BasicTurbulenceModel>::correct()
     dimensionedScalar SMALL_gamma("SMALL_gamma", gammaDot.dimensions(), VSMALL);
     gammaDot = sqrt(S2)+SMALL_gamma;  // Effective shear rate
     // Apparent viscosity from real HB (no regularization)
-    volScalarField muApp = tau0/gammaDot + K * pow(gammaDot, n - 1);
+    dimensionedScalar SMALL_value1("SMALL_gamma1", gammaDot.dimensions(), pow(10,-30));
+    volScalarField muApp = tau0/gammaDot + K * pow(gammaDot+SMALL_value1, n - 1);
     // d(mu)/d(gammaDot)
-    dimensionedScalar SMALL_value("SMALL_gamma", S2.dimensions(), pow(10,-30));
-    volScalarField dmu_dgamma = -tau0 / (gammaDot * gammaDot + SMALL_value) + K * (n - 1.0) * pow(gammaDot, n - 2.0);
+    dimensionedScalar SMALL_value2("SMALL_gamma2", S2.dimensions(), pow(10,-30));
+    volScalarField dmu_dgamma = -tau0 / (gammaDot * gammaDot + SMALL_value2) + K * (n - 1.0) * pow(gammaDot+SMALL_value1, n - 2.0);
     // Compute mu^nn
     volScalarField muNN = dmu_dgamma * (C_beta* betaStar_ * k_ * omega_ / (muApp * gammaDot));  // Check omega_ and k_ later
     // Optional: Bound it for stability
