@@ -20,7 +20,7 @@ solvers
     p
     {
         solver          GAMG;
-        tolerance       1e-07;
+        tolerance       1e-08;
         relTol          0.05;
         smoother        DIC;
     }
@@ -28,7 +28,7 @@ solvers
     k
     {
         solver          smoothSolver;
-        tolerance       1e-07;
+        tolerance       1e-08;
         relTol          0.05;
         smoother        symGaussSeidel;
     }
@@ -37,7 +37,7 @@ solvers
     {
         solver          smoothSolver;
         smoother        symGaussSeidel;
-        tolerance       1e-07;
+        tolerance       1e-08;
         relTol          0.05;
     }
 }
@@ -55,8 +55,8 @@ relaxationFactors
 {
     equations
     {
-        p               0.98; // 0.9 is more stable but 0.95 more convergent
-        ".*"            0.98; // 0.9 is more stable but 0.95 more convergent
+        p               0.99; // 0.9 is more stable but 0.95 more convergent
+        ".*"            0.99; // 0.9 is more stable but 0.95 more convergent
     }
 }
 

@@ -44,11 +44,11 @@ vertices
 
 blocks
 (
-    hex (0 1 5 4 8 9 13 12) (26 110 1) simpleGrading (1 0.03 1)
-    hex (3 0 4 7 11 8 12 15) (26 110 1) simpleGrading (1 0.03 1)
-    hex (3 7 6 2 11 15 14 10) (110 26 1) simpleGrading (0.03 1 1)
-    hex (2 6 5 1 10 14 13 9) (110 26 1) simpleGrading (0.03 1 1)
-    hex (3 2 1 0 11 10 9 8)  (26 26 1) simpleGrading (1 1 1)
+    hex (0 1 5 4 8 9 13 12) (24 100 1) simpleGrading (1 0.05 1)
+    hex (3 0 4 7 11 8 12 15) (24 100 1) simpleGrading (1 0.05 1)
+    hex (3 7 6 2 11 15 14 10) (100 24 1) simpleGrading (0.05 1 1)
+    hex (2 6 5 1 10 14 13 9) (100 24 1) simpleGrading (0.05 1 1)
+    hex (3 2 1 0 11 10 9 8)  (24 24 1) simpleGrading (1 1 1)
 );
 
 edges

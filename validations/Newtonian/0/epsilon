@@ -2,48 +2,42 @@
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     | Website:  https://openfoam.org
-    \\  /    A nd           | Version:  7
+    \\  /    A nd           | Version:  6
      \\/     M anipulation  |
 \*---------------------------------------------------------------------------*/
 FoamFile
 {
     version     2.0;
     format      ascii;
-    class       polyBoundaryMesh;
-    location    "constant/polyMesh";
-    object      boundary;
+    class       volScalarField;
+    location    "0";
+    object      epsilon;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-3
-(
+dimensions      [0 2 -3 0 0 0 0];
+
+internalField   uniform 1e-20;
+
+boundaryField
+{
     inlet
     {
         type            cyclic;
-        inGroups        List<word> 1(cyclic);
-        nFaces          12116;
-        startFace       24180;
-        matchTolerance  0.0001;
-        transform       unknown;
-        neighbourPatch  outlet;
     }
+
     outlet
     {
         type            cyclic;
-        inGroups        List<word> 1(cyclic);
-        nFaces          12116;
-        startFace       36296;
-        matchTolerance  0.0001;
-        transform       unknown;
-        neighbourPatch  inlet;
     }
+
     wall
     {
-        type            wall;
-        inGroups        List<word> 1(wall);
-        nFaces          104;
-        startFace       48412;
+        type            fixedValue;
+        value           uniform 1e-20;
     }
-)
+
+}
+
 
 // ************************************************************************* //

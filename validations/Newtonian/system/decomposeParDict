@@ -2,7 +2,7 @@
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     | Website:  https://openfoam.org
-    \\  /    A nd           | Version:  6
+    \\  /    A nd           | Version:  7
      \\/     M anipulation  |
 \*---------------------------------------------------------------------------*/
 FoamFile
@@ -10,18 +10,13 @@ FoamFile
     version     2.0;
     format      ascii;
     class       dictionary;
-    location    "constant";
-    object      transportProperties;
+    location    "system";
+    object      decomposeParDict;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-transportModel HerschelBulkley;
-HerschelBulkleyCoeffs
-{
-    nu0      [ 0 2 -1 0 0 0 0 ] 1e-3;
-    tau0     [ 0 2 -2 0 0 0 0 ] 8.39492321e-8;
-    k        [ 0 2 -1 0 0 0 0 ] 1e-6;
-    n        [ 0 0  0 0 0 0 0 ] 1;
-}
+numberOfSubdomains 8;
+
+method          scotch;
 
 // ************************************************************************* //

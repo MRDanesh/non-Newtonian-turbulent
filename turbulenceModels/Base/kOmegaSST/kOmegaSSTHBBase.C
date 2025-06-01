@@ -426,9 +426,9 @@ void kOmegaSSTHBBase<TurbulenceModel, BasicTurbulenceModel>::correct()
     }
 
     
-
-
-
+    
+    
+    
 
     // Local references
     const alphaField& alpha = this->alpha_;
@@ -436,6 +436,7 @@ void kOmegaSSTHBBase<TurbulenceModel, BasicTurbulenceModel>::correct()
     const surfaceScalarField& alphaRhoPhi = this->alphaRhoPhi_;
     const volVectorField& U = this->U_;
     volScalarField& nut = this->nut_;
+    const volScalarField& nu = this->nu(); // mean viscosity
     fv::options& fvOptions(fv::options::New(this->mesh_));
 
     BasicTurbulenceModel::correct();
@@ -445,11 +446,7 @@ void kOmegaSSTHBBase<TurbulenceModel, BasicTurbulenceModel>::correct()
         fvc::div(fvc::absolute(this->phi(), U))()()
     );
 
-    tmp<volTensorField> tgradU = fvc::grad(U);
-    volScalarField S2(2*magSqr(symm(tgradU())));
-    volScalarField::Internal GbyNu(dev(twoSymm(tgradU()())) && tgradU()());
-    volScalarField::Internal G(this->GName(), nut()*GbyNu);
-    tgradU.clear();
+
     // ********** Read non-Newtonian *************//
     IOdictionary turbulenceProperties
     (
@@ -463,55 +460,55 @@ void kOmegaSSTHBBase<TurbulenceModel, BasicTurbulenceModel>::correct()
         )
     );
 
-    //********************* NOTE **********************//
-
-    // rho is dimensionless, becasue OpenFOAM just take kinematic viscosity. So in the code mu is actually nu
-
-    //********************* NOTE **********************//
-
-    
-
     dimensionedScalar K(turbulenceProperties.lookup("K"));
     dimensionedScalar tau0(turbulenceProperties.lookup("tau0"));
     dimensionedScalar n(turbulenceProperties.lookup("n"));
-
-    dimensionedScalar C_beta(turbulenceProperties.lookup("C_beta"));
+    dimensionedScalar C_beta(turbulenceProperties.lookup("C_beta"));  // For Newtonian case must be zero
     dimensionedScalar C_x(turbulenceProperties.lookup("C_x"));
     dimensionedScalar C_zeta(turbulenceProperties.lookup("C_zeta"));
     dimensionedScalar C_E1(turbulenceProperties.lookup("C_E1"));
     dimensionedScalar C_E2(turbulenceProperties.lookup("C_E2"));
+    // **********************//
 
-    // Strain rate magnitude squared
-    volScalarField gammaDot = sqrt(S2);  // Effective shear rate
-    dimensionedScalar SMALL_gamma("SMALL_gamma", gammaDot.dimensions(), VSMALL);
-    gammaDot = sqrt(S2)+SMALL_gamma;  // Effective shear rate
+
+    tmp<volTensorField> tgradU = fvc::grad(U);
+
+    volScalarField extraNN = C_beta*betaStar_*omega_*k_/nu;  //extra term for non-Newtonian
+    volScalarField S2(2*magSqr(symm(tgradU()))+ extraNN);  // Modified mean strain rate (squared)
+    volScalarField meanS2(2*magSqr(symm(tgradU())));       // Non-modified mean strain rate (squared)
+
+    volScalarField::Internal GbyNu(dev(twoSymm(tgradU()())) && tgradU()());
+    volScalarField::Internal G(this->GName(), nut()*GbyNu);
+    tgradU.clear();
+
+    //********************* NOTE **********************//
+    // rho is dimensionless, becasue OpenFOAM just take kinematic viscosity. So in the code mu is actually nu
+    //****************************************//
+
+
+    //****************** non-Newtonian calculations **********************//
+    volScalarField gammaDot = sqrt(S2);  // Modified mean strain rate
+    dimensionedScalar SMALL_gammaDot("SMALL_gamma", gammaDot.dimensions(), VSMALL);
+    gammaDot = gammaDot+SMALL_gammaDot;  // Effective shear rate
     // Apparent viscosity from real HB (no regularization)
-    dimensionedScalar SMALL_value1("SMALL_gamma1", gammaDot.dimensions(), pow(10,-30));
-    volScalarField muApp = tau0/gammaDot + K * pow(gammaDot+SMALL_value1, n - 1);
-    // d(mu)/d(gammaDot)
-    dimensionedScalar SMALL_value2("SMALL_gamma2", S2.dimensions(), pow(10,-30));
-    volScalarField dmu_dgamma = -tau0 / (gammaDot * gammaDot + SMALL_value2) + K * (n - 1.0) * pow(gammaDot+SMALL_value1, n - 2.0);
+    //volScalarField muApp = tau0/gammaDot + K * pow(gammaDot, n - 1);
+    volScalarField dmu_dgamma = -tau0 / (gammaDot * gammaDot) + K * (n - 1.0) * pow(gammaDot, n - 2.0);
     // Compute mu^nn
-    volScalarField muNN = dmu_dgamma * (C_beta* betaStar_ * k_ * omega_ / (muApp * gammaDot));  // Check omega_ and k_ later
-    // Optional: Bound it for stability
-    muNN = max(muNN, dimensionedScalar("zero", muNN.dimensions(), 0.0));
-    // 1. chi^nn
-    volScalarField chiNN = -C_x*muNN * S2;
+    volScalarField muNN = dmu_dgamma * (C_beta* betaStar_ * k_ * omega_ / (nu * gammaDot));  // Check omega_ and k_ later
 
+    volScalarField chiNN = -C_x*muNN * meanS2;
 
-
+    volScalarField zetaCoeff = dmu_dgamma * meanS2 / gammaDot;
    
-   
-    volScalarField zetaCoeff = dmu_dgamma * S2 / gammaDot;
-   
-    volScalarField zetaNN = C_zeta * fvc::laplacian(zetaCoeff, k_);
+    volScalarField zetaNN = C_zeta * fvc::laplacian(zetaCoeff, k_);  // check this
 
-    volScalarField nut_nn = this->nut();
-
-    
+    //volScalarField nut_nn = this->nut();
 
     scalar FE_n = 0.5 * tanh(8.0 * (n.value() - 0.75)) + 0.5;
     scalar C_E = C_E1.value() * FE_n + C_E2.value() * (1.0 - FE_n);
+    //********************
+
+
 
     // Update omega and G at the wall
     omega_.boundaryFieldRef().updateCoeffs();
@@ -524,12 +521,9 @@ void kOmegaSSTHBBase<TurbulenceModel, BasicTurbulenceModel>::correct()
     volScalarField F1(this->F1(CDkOmega));
     volScalarField F23(this->F23());
 
-
-
     {
         volScalarField::Internal gamma(this->gamma(F1));
         volScalarField::Internal beta(this->beta(F1));
-        
 
         // Turbulent frequency equation
         tmp<fvScalarMatrix> omegaEqn
@@ -555,8 +549,8 @@ void kOmegaSSTHBBase<TurbulenceModel, BasicTurbulenceModel>::correct()
           + Qsas(S2(), gamma, beta)
           + omegaSource()
           + fvOptions(alpha, rho, omega_)
-          - (C_E*gamma/nut_nn)*chiNN
-          - (C_E*gamma/nut_nn)*zetaNN
+          - (C_E*gamma/nut)*chiNN
+          - (C_E*gamma/nut)*zetaNN
         );
 
         omegaEqn.ref().relax();
