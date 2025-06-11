@@ -1,0 +1,42 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  6
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      turbulenceProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+simulationType RAS;
+
+RAS
+{
+    RASModel        kOmegaSSTHB;
+
+    turbulence      on;
+
+    printCoeffs     on;
+}
+
+K            	 K        [ 0 2 -1.2 0 0 0 0 ] 1e-6; 	// the dimension in time changes with n (n-2), for turbulence model calculation is necessary.
+tau0		 tau0     [ 0 2 -2 0 0 0 0 ] 6.656396367541316e-08;
+n		 n        [ 0 0 0 0 0 0 0 ] 0.8;
+
+C_beta		 C_beta         [0 0 0 0 0 0 0] 0.667;
+C_x		 C_x        	[0 0 0 0 0 0 0] 0.6;
+C_zeta		 C_zeta        	[0 0 0 0 0 0 0] 0.4;
+C_E1		 C_E1        	[0 0 0 0 0 0 0] 2.5;
+C_E2		 C_E2        	[0 0 0 0 0 0 0] 1.85;
+C_tau		 C_tau       	[0 0 0 0 0 0 0] 0.6;
+betaStar_	 betaStar_      [0 0 0 0 0 0 0] 0.09;
+
+
+// ************************************************************************* //

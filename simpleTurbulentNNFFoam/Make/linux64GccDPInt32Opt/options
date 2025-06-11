@@ -57,4 +57,4 @@ EXE_INC = -I$(LIB_SRC)/TurbulenceModels/turbulenceModels/lnInclude -I$(LIB_SRC)/
 # 10 "Make/options"
 
 
-EXE_LIBS = -L$(FOAM_USER_LIBBIN) -lturbulenceModels -lincompressibleTurbulenceModels -lincompressibleTransportModels -lfiniteVolume -lmeshTools -L$(FOAM_USER_LIBBIN) -lstrainRate -L$(FOAM_USER_LIBBIN) -lvorticity -lfvOptions -lsampling
+EXE_LIBS = -lturbulenceModels -lincompressibleTurbulenceModels -lincompressibleTransportModels -lfiniteVolume -lmeshTools -L$(FOAM_USER_LIBBIN) -lstrainRate -L$(FOAM_USER_LIBBIN) -lvorticity -lfvOptions -lsampling

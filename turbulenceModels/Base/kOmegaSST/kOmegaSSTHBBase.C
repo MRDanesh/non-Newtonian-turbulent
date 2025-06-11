@@ -435,7 +435,7 @@ void kOmegaSSTHBBase<TurbulenceModel, BasicTurbulenceModel>::correct()
     const rhoField& rho = this->rho_;
     const surfaceScalarField& alphaRhoPhi = this->alphaRhoPhi_;
     const volVectorField& U = this->U_;
-    volScalarField& nut = this->nut_;
+    const volScalarField& nut = this->nut_;
     const volScalarField& nu = this->nu(); // mean viscosity
     fv::options& fvOptions(fv::options::New(this->mesh_));
 
@@ -474,8 +474,8 @@ void kOmegaSSTHBBase<TurbulenceModel, BasicTurbulenceModel>::correct()
     tmp<volTensorField> tgradU = fvc::grad(U);
 
     volScalarField extraNN = C_beta*betaStar_*omega_*k_/nu;  //extra term for non-Newtonian
-    volScalarField S2(2*magSqr(symm(tgradU()))+ extraNN);  // Modified mean strain rate (squared)
-    volScalarField meanS2(2*magSqr(symm(tgradU())));       // Non-modified mean strain rate (squared)
+    volScalarField S2 = 2*magSqr(symm(tgradU()));       // Non-modified mean strain rate (squared)
+    volScalarField newS2 = S2 + extraNN;  // Modified mean strain rate (squared)
 
     volScalarField::Internal GbyNu(dev(twoSymm(tgradU()())) && tgradU()());
     volScalarField::Internal G(this->GName(), nut()*GbyNu);
@@ -487,28 +487,24 @@ void kOmegaSSTHBBase<TurbulenceModel, BasicTurbulenceModel>::correct()
 
 
     //****************** non-Newtonian calculations **********************//
-    volScalarField gammaDot = sqrt(S2);  // Modified mean strain rate
+    volScalarField gammaDot = sqrt(newS2);  // Modified mean strain rate
     dimensionedScalar SMALL_gammaDot("SMALL_gamma", gammaDot.dimensions(), VSMALL);
-    gammaDot = gammaDot+SMALL_gammaDot;  // Effective shear rate
-    // Apparent viscosity from real HB (no regularization)
-    //volScalarField muApp = tau0/gammaDot + K * pow(gammaDot, n - 1);
+    gammaDot = max(gammaDot, SMALL_gammaDot); // stabilization
     volScalarField dmu_dgamma = -tau0 / (gammaDot * gammaDot) + K * (n - 1.0) * pow(gammaDot, n - 2.0);
-    // Compute mu^nn
-    volScalarField muNN = dmu_dgamma * (C_beta* betaStar_ * k_ * omega_ / (nu * gammaDot));  // Check omega_ and k_ later
 
-    volScalarField chiNN = -C_x*muNN * meanS2;
+    volScalarField muNN = dmu_dgamma * extraNN/ gammaDot; 
+    volScalarField chiNN = -C_x*muNN * S2;
 
-    volScalarField zetaCoeff = dmu_dgamma * meanS2 / gammaDot;
-   
+    volScalarField zetaCoeff = dmu_dgamma * S2 / gammaDot;
     volScalarField zetaNN = C_zeta * fvc::laplacian(zetaCoeff, k_);  // check this
 
     //volScalarField nut_nn = this->nut();
 
-    scalar FE_n = 0.5 * tanh(8.0 * (n.value() - 0.75)) + 0.5;
-    scalar C_E = C_E1.value() * FE_n + C_E2.value() * (1.0 - FE_n);
+    scalar FE_n = 0.5 * tanh(8.0 * (n.value() - 0.75)) + 0.5;   //Ok
+    scalar C_E = C_E1.value() * FE_n + C_E2.value() * (1.0 - FE_n); //Ok
     //********************
 
-
+    //Info << "nut range: " << gMin(nut) << " / " << gMax(nut) << endl;
 
     // Update omega and G at the wall
     omega_.boundaryFieldRef().updateCoeffs();
@@ -549,8 +545,8 @@ void kOmegaSSTHBBase<TurbulenceModel, BasicTurbulenceModel>::correct()
           + Qsas(S2(), gamma, beta)
           + omegaSource()
           + fvOptions(alpha, rho, omega_)
-          - (C_E*gamma/nut)*chiNN
-          - (C_E*gamma/nut)*zetaNN
+          + alpha()*(C_E*gamma/nut)*chiNN
+          + alpha()*(C_E*gamma/nut)*zetaNN
         );
 
         omegaEqn.ref().relax();
@@ -573,8 +569,8 @@ void kOmegaSSTHBBase<TurbulenceModel, BasicTurbulenceModel>::correct()
       - fvm::Sp(alpha()*rho()*epsilonByk(F1, F23), k_)
       + kSource()
       + fvOptions(alpha, rho, k_)
-      + alpha() * chiNN
-      + alpha() * zetaNN
+      + alpha() * chiNN //ok
+      + alpha() * zetaNN //ok
     );
 
     kEqn.ref().relax();
